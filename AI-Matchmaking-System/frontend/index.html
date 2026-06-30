@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI婚恋系统 - 高保真前端交互平台</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <div id="app" class="min-h-screen flex flex-col items-center p-4 md:p-6">
+        
+        <header class="w-full max-w-5xl bg-white shadow-md rounded-xl p-4 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl">💖</span>
+                <h1 class="text-xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">AI 智能婚恋交友平台</h1>
+            </div>
+            <div class="flex bg-gray-100 p-1 rounded-lg">
+                <button @click="currentTab = 'profile'" :class="currentTab === 'profile' ? 'bg-white shadow text-blue-600 font-bold' : 'text-gray-600'" class="px-4 py-2 text-sm rounded-md transition">
+                    <i class="fa-solid fa-user-edit mr-1"></i> 画像提取
+                </button>
+                <button @click="currentTab = 'match'" :class="currentTab === 'match' ? 'bg-white shadow text-pink-500 font-bold' : 'text-gray-600'" class="px-4 py-2 text-sm rounded-md transition">
+                    <i class="fa-solid fa-heart-circle-check mr-1"></i> 每日推荐
+                </button>
+                <button @click="currentTab = 'chat'" :class="currentTab === 'chat' ? 'bg-white shadow text-purple-600 font-bold' : 'text-gray-600'" class="px-4 py-2 text-sm rounded-md transition">
+                    <i class="fa-solid fa-comments mr-1"></i> AI聊天室
+                </button>
+            </div>
+        </header>
+
+        <main class="w-full max-w-5xl">
+            
+            <div v-if="currentTab === 'profile'" class="bg-white p-6 rounded-xl shadow-md grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-blue-500"></i> AI 智能画像提取
+                    </h2>
+                    <p class="text-sm text-gray-500 mb-4">完善您的口语化描述，让大模型自动为您解析性格特质与兴趣，免去繁琐的表单勾选。</p>
+                    <textarea v-model="rawBio" placeholder="例如：我是一名大三的软件工程专业学生，平时很喜欢写代码和捣鼓机械键盘，空闲了爱打 CS2。性格表面内向技术宅，其实熟了之后话很多，想找个有共同话题的..." class="w-full h-40 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm mb-4 resize-none"></textarea>
+                    <button @click="extractTags" :disabled="loading" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-xl transition disabled:bg-gray-400 shadow-md">
+                        {{ loading ? 'AI 正在深度解析文本向量...' : '开始 AI 智能画像提取' }}
+                    </button>
+                </div>
+                <div class="flex flex-col justify-center border-t md:border-t-0 md:border-l border-gray-100 pt-6 md:pt-0 md:pl-6">
+                    <div v-if="profile" class="p-4 bg-blue-50/60 rounded-xl border border-blue-100">
+                        <h3 class="text-sm font-bold text-blue-800 mb-3"><i class="fa-solid fa-microchip mr-1"></i> NLP 结构化解析结果：</h3>
+                        <div class="mb-4">
+                            <span class="text-xs text-gray-500 block mb-1.5 font-medium">🏷️ 提取出的兴趣爱好：</span>
+                            <div class="flex flex-wrap gap-2">
+                                <span v-for="tag in profile.hobbies" class="bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-full font-medium"># {{ tag }}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs text-gray-500 block mb-1.5 font-medium">🧠 AI性格特质分析：</span>
+                            <div class="flex flex-wrap gap-2">
+                                <span v-for="tag in profile.aiPersonalityTags" class="bg-purple-100 text-purple-800 text-xs px-2.5 py-1 rounded-full font-medium"># {{ tag }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else class="text-center text-gray-400 py-12">
+                        <i class="fa-solid fa-fingerprint text-4xl mb-2"></i>
+                        <p class="text-sm">暂无画像数据，请在左侧输入并提取</p>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="currentTab === 'match'" class="flex justify-center">
+                <div class="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 relative">
+                    <div class="absolute top-4 right-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md z-10">
+                        <i class="fa-solid fa-bolt mr-1"></i> AI 契合度 {{ currentCandidate.matchScore }}%
+                    </div>
+                    <div class="h-64 bg-gradient-to-br from-pink-100 to-purple-200 relative flex items-center justify-center text-gray-400 text-6xl">
+                        <i class="fa-solid fa-user-astronaut text-white drop-shadow-md"></i>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-baseline gap-2 mb-2">
+                            <h2 class="text-2xl friendship font-bold text-gray-800">{{ currentCandidate.nickname }}</h2>
+                            <span class="text-gray-500 font-medium text-sm">{{ currentCandidate.age }}岁 · {{ currentCandidate.gender }}</span>
+                        </div>
+                        <p class="text-gray-600 text-xs mb-4"><i class="fa-solid fa-quote-left mr-1 text-gray-300"></i>{{ currentCandidate.bio }}</p>
+                        
+                        <div class="mb-5 p-3 bg-rose-50/50 rounded-xl border border-rose-100/60">
+                            <h4 class="text-xs font-bold text-rose-700 mb-2 flex items-center gap-1"><i class="fa-solid fa-sparkles"></i> 你们的共同爱好：</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span v-for="tag in currentCandidate.commonHobbies" class="bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs px-2.5 py-1 rounded-md font-medium shadow-sm">
+                                    <i class="fa-solid fa-star text-[10px] mr-1"></i>{{ tag }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <h4 class="text-xs font-bold text-gray-500 mb-2">📊 AI 多维度契合指标 (雷达图数据化展示)</h4>
+                            <div class="space-y-2 text-xs">
+                                <div>
+                                    <div class="flex justify-between text-gray-600 mb-1"><span>三观契合度</span><span class="font-bold">92%</span></div>
+                                    <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden"><div class="bg-pink-500 h-full" style="width: 92%"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-gray-600 mb-1"><span>性格互补度</span><span class="font-bold">85%</span></div>
+                                    <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden"><div class="bg-purple-500 h-full" style="width: 85%"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-gray-600 mb-1"><span>生活习惯匹配</span><span class="font-bold">78%</span></div>
+                                    <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden"><div class="bg-blue-500 h-full" style="width: 78%"></div></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-around items-center pt-2 border-t border-gray-50">
+                            <button @click="nextCandidate('pass')" class="w-12 h-12 rounded-full bg-white shadow-md border border-gray-100 text-gray-400 hover:text-gray-600 text-xl transition transform active:scale-95">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                            <button @click="nextCandidate('like')" class="w-14 h-14 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg text-2xl transition transform active:scale-95">
+                                <i class="fa-solid fa-heart animate-pulse"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="currentTab === 'chat'" class="w-full max-w-4xl bg-white rounded-xl shadow-md overflow-hidden grid grid-cols-1 md:grid-cols-3 h-[550px]">
+                <div class="border-r border-gray-100 bg-gray-50/50 flex flex-col">
+                    <div class="p-4 border-b border-gray-100 bg-white"><h3 class="font-bold text-gray-700">通讯录与匹配状态</h3></div>
+                    <div class="flex-1 overflow-y-auto p-2">
+                        <div class="flex items-center gap-3 p-3 bg-purple-50 rounded-xl border border-purple-100 cursor-pointer">
+                            <div class="w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center text-purple-600 font-bold">加</div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex justify-between items-baseline"><h4 class="text-sm font-bold text-gray-800 truncate">林加奈</h4><span class="text-[10px] text-purple-500 font-medium">Communicating</span></div>
+                                <p class="text-xs text-purple-600 truncate">AI 破冰助手激活中</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="md:col-span-2 flex flex-col h-full bg-white relative">
+                    <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-white shadow-sm z-10">
+                        <span class="font-bold text-gray-800">正在与 林加奈 沟通中</span>
+                        <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-md font-medium">双向喜欢达成</span>
+                    </div>
+                    
+                    <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
+                        <div v-for="msg in chatHistory" :key="msg.id" :class="msg.sender === 'me' ? 'justify-end' : 'justify-start'" class="flex items-end gap-2">
+                            <div v-if="msg.sender !== 'me'" class="w-8 h-8 rounded-full bg-purple-200 flex items-center justify-center text-xs font-bold text-purple-700">加</div>
+                            <div :class="msg.sender === 'me' ? 'bg-blue-600 text-white rounded-br-none' : 'bg-white border border-gray-100 text-gray-800 rounded-bl-none'" class="max-w-[70%] p-3 rounded-2xl text-sm shadow-sm relative">
+                                <span v-if="msg.isAIGenerated" class="absolute -top-4 right-1 text-[9px] bg-amber-100 text-amber-800 px-1 rounded border border-amber-200"><i class="fa-solid fa-wand-magic-sparkles text-[8px]"></i> AI润色</span>
+                                {{ msg.text }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="showIcebreakers" class="p-3 bg-amber-50/90 border-t border-amber-200/60 backdrop-blur-sm flex flex-col gap-2">
+                        <div class="flex justify-between items-center"><span class="text-xs font-bold text-amber-800"><i class="fa-solid fa-lightbulb text-amber-600 mr-1"></i> AI 智能破冰建议（基于你们都喜欢 [CS2 / 独立游戏] 触发）：</span><button @click="showIcebreakers = false" class="text-gray-400 hover:text-gray-600 text-xs">✕</button></div>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <button v-for="ice in icebreakers" @click="selectIcebreaker(ice)" class="flex-1 bg-white hover:bg-amber-100/60 border border-amber-200 text-left p-2 rounded-lg text-xs text-amber-900 truncate transition"></button>
+                        </div>
+                    </div>
+
+                    <div class="p-4 border-t border-gray-100 bg-white">
+                        <div class="flex gap-2 items-center">
+                            <div class="flex-1 relative flex items-center">
+                                <input v-model="chatInput" type="text" placeholder="输入聊天内容或使用AI话术..." class="w-full p-2.5 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                                <button @click="togglePolishMenu" class="absolute right-3 text-purple-500 hover:text-purple-700 transition title='AI语气润色'">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                </button>
+                                <div v-if="showPolishMenu" class="absolute right-0 bottom-12 bg-white border border-gray-200 rounded-xl shadow-xl p-1 flex flex-col w-28 z-20">
+                                    <button @click="polishText('humor')" class="text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-purple-50 rounded-lg transition"><i class="fa-regular fa-face-laugh-wink mr-1"></i> 幽默风格</button>
+                                    <button @click="polishText('polite')" class="text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-purple-50 rounded-lg transition"><i class="fa-regular fa-handshake mr-1"></i> 礼貌真诚</button>
+                                </div>
+                            </div>
+                            <button @click="sendMsg" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition shadow-md">发送</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    currentTab: 'profile', // 当前活跃的TAB页
+                    rawBio: '',
+                    loading: false,
+                    profile: null,
+                    chatInput: '',
+                    showIcebreakers: true,
+                    showPolishMenu: false,
+                    // 模拟匹配流选池数据
+                    candidates: [
+                        { nickname: '林加奈', age: 22, gender: '女', bio: '软件工程大三，日常宅，沉迷各种客制化机械键盘，游戏爱打CS2，段位老鹰。想找个能一起双排或者聊轴体的人。', matchScore: 96, commonHobbies: ['CS2', '机械键盘', '独立游戏'] },
+                        { nickname: '陈心怡', age: 24, gender: '女', bio: '喜欢摄影和网球，周末经常背着相机到处旅行。性格随性，希望遇见同样热爱生活的人。', matchScore: 74, commonHobbies: ['阅读', '旅行'] }
+                    ],
+                    candidateIndex: 0,
+                    // 聊天历史纪录初始化
+                    chatHistory: [
+                        { id: 1, sender: 'other', text: '你好呀！系统说我们都喜欢打游戏？', isAIGenerated: false }
+                    ],
+                    icebreakers: [
+                        "看你资料打CS2？今晚要不要开黑，我发誓绝对不扔白光白到你！",
+                        "好巧啊，我也在捣鼓客制化键盘。你目前主力是用磁轴还是传统机械轴？"
+                    ]
+                }
+            },
+            computed: {
+                currentCandidate() {
+                    return this.candidates[this.candidateIndex % this.candidates.length];
+                }
+            },
+            methods: {
+                extractTags() {
+                    if (!this.rawBio.trim()) return;
+                    this.loading = true;
+                    setTimeout(() => {
+                        this.loading = false;
+                        if (this.rawBio.includes('代码') || this.rawBio.includes('游戏') || this.rawBio.includes('键盘') || this.rawBio.includes('cs')) {
+                            this.profile = {
+                                hobbies: ['CS2', '机械键盘', '数码硬件'],
+                                aiPersonalityTags: ['逻辑思维强', '技术硬核', '熟人话痨']
+                            };
+                        } else {
+                            this.profile = {
+                                hobbies: ['摄影', '户外网球', '影视旅行'],
+                                aiPersonalityTags: ['浪漫随性', '热爱生活']
+                            };
+                        }
+                    }, 1000);
+                },
+                nextCandidate(action) {
+                    if(action === 'like') {
+                        alert('配对成功！已为您自动将该候选人添加至 AI 聊天室列表中。');
+                        this.currentTab = 'chat';
+                    } else {
+                        this.candidateIndex++;
+                    }
+                },
+                selectIcebreaker(text) {
+                    this.chatInput = text;
+                    this.showIcebreakers = false;
+                },
+                togglePolishMenu() {
+                    if (!this.chatInput.trim()) {
+                        alert('请先输入一些文字草稿，才能使用 AI 语气润色功能哦！');
+                        return;
+                    }
+                    this.showPolishMenu = !this.showPolishMenu;
+                },
+                polishText(style) {
+                    this.showPolishMenu = false;
+                    let originText = this.chatInput;
+                    if(style === 'humor') {
+                        this.chatInput = originText + "（卑微在线蹲回，回慢了我就要去写Bug麻痹自己了 🤖）";
+                    } else if(style === 'polite') {
+                        this.chatInput = "打扰啦，" + originText + "，感觉你的文字很有意思，非常期待能和你交流一下哈~";
+                    }
+                },
+                sendMsg() {
+                    if (!this.chatInput.trim()) return;
+                    // 判断是否带有润色的后缀或前缀从而打上AI标签标识，体现功能
+                    let isAI = this.chatInput.includes('🤖') || this.chatInput.includes('打扰啦');
+                    this.chatHistory.push({
+                        id: Date.now(),
+                        sender: 'me',
+                        text: this.chatInput,
+                        isAIGenerated: isAI
+                    });
+                    this.chatInput = '';
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
